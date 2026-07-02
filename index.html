@@ -426,9 +426,25 @@ let state = defaultState();
 let storageOK = true;
 let saveTimer = null;
 
+const STORAGE_KEY = 'pcpm41-state';
+const storageAdapter = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function' && typeof window.storage.set==='function')
+  ? window.storage
+  : {
+      async get(key){
+        try{
+          const v = window.localStorage.getItem(key);
+          return v===null ? null : {key, value:v};
+        }catch(e){ return null; }
+      },
+      async set(key, value){
+        window.localStorage.setItem(key, value);
+        return {key, value};
+      }
+    };
+
 async function loadState(){
   try{
-    const res = await window.storage.get('pcpm41-state', false);
+    const res = await storageAdapter.get(STORAGE_KEY, false);
     if(res && res.value){
       const loaded = JSON.parse(res.value);
       state = Object.assign(defaultState(), loaded);
@@ -442,7 +458,7 @@ async function loadState(){
 function scheduleSave(){
   if(saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(async ()=>{
-    try{ await window.storage.set('pcpm41-state', JSON.stringify(state), false); storageOK=true; }
+    try{ await storageAdapter.set(STORAGE_KEY, JSON.stringify(state), false); storageOK=true; }
     catch(e){ storageOK=false; showToast('Gagal menyimpan progres — coba lagi sebentar lagi'); }
   }, 450);
 }
