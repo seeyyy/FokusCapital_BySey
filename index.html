@@ -427,20 +427,43 @@ let storageOK = true;
 let saveTimer = null;
 
 const STORAGE_KEY = 'pcpm41-state';
-const storageAdapter = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function' && typeof window.storage.set==='function')
-  ? window.storage
-  : {
-      async get(key){
-        try{
-          const v = window.localStorage.getItem(key);
-          return v===null ? null : {key, value:v};
-        }catch(e){ return null; }
-      },
-      async set(key, value){
-        window.localStorage.setItem(key, value);
-        return {key, value};
-      }
-    };
+
+function makeMemoryAdapter(){
+  const mem = {};
+  return {
+    async get(key){ return (key in mem) ? {key, value:mem[key]} : null; },
+    async set(key, value){ mem[key] = value; return {key, value}; }
+  };
+}
+function makeLocalStorageAdapter(){
+  return {
+    async get(key){
+      const v = window.localStorage.getItem(key);
+      return v===null ? null : {key, value:v};
+    },
+    async set(key, value){
+      window.localStorage.setItem(key, value);
+      return {key, value};
+    }
+  };
+}
+function detectStorageAdapter(){
+  if(typeof window!=='undefined' && window.storage && typeof window.storage.get==='function' && typeof window.storage.set==='function'){
+    return { kind:'claude', adapter: window.storage };
+  }
+  try{
+    const testKey = '__pcpm41_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    return { kind:'localStorage', adapter: makeLocalStorageAdapter() };
+  }catch(e){
+    // localStorage blocked (private/incognito mode, file:// restrictions, disabled storage, etc.)
+    return { kind:'memory', adapter: makeMemoryAdapter() };
+  }
+}
+const _storageDetected = detectStorageAdapter();
+const storageAdapter = _storageDetected.adapter;
+const storageKind = _storageDetected.kind;
 
 async function loadState(){
   try{
@@ -454,12 +477,18 @@ async function loadState(){
   }catch(e){
     // first run / no key yet — keep defaults
   }
+  if(storageKind==='memory'){
+    showToast('Browser ini memblokir penyimpanan lokal — progres hanya tersimpan selama tab ini terbuka.');
+  }
 }
 function scheduleSave(){
   if(saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(async ()=>{
     try{ await storageAdapter.set(STORAGE_KEY, JSON.stringify(state), false); storageOK=true; }
-    catch(e){ storageOK=false; showToast('Gagal menyimpan progres — coba lagi sebentar lagi'); }
+    catch(e){
+      storageOK=false;
+      if(storageKind!=='memory') showToast('Gagal menyimpan progres — coba lagi sebentar lagi');
+    }
   }, 450);
 }
 
