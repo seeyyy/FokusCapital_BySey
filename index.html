@@ -162,6 +162,11 @@
 
   .tweet-wrap{display:flex; flex-direction:column;}
   .tweet-wrap .twitter-tweet{margin:0 !important;}
+  .tweet-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .tweet-nav{display:flex; align-items:center; gap:8px;}
+  .tweet-nav-btn{width:26px; height:26px; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;}
+  .tweet-nav-btn:hover{background:var(--maroon); color:#fff; border-color:var(--maroon);}
+  .tweet-count{font-size:11px; color:var(--ink-faint);}
 
   .rm-chart{position:relative; padding-top:34px; padding-bottom:26px;}
   .rm-row{display:flex; align-items:center; gap:14px; margin-bottom:10px; position:relative; z-index:1;}
@@ -739,12 +744,26 @@ function roadmapCardHtml(){
 }
 
 /* ================= RENDER: TWEET EMBED ================= */
+const TWEET_URLS = [
+  'https://twitter.com/itskindavienny/status/686914080364363776',
+  'https://twitter.com/itskindavienny/status/1231790666985852928',
+  'https://twitter.com/keharyapatihan/status/1905992485249405373'
+];
+let tweetIndex = 0;
 function tweetCardHtml(){
+  const url = TWEET_URLS[tweetIndex];
   return `
     <div class="card tweet-wrap" style="margin-bottom:16px;">
-      <div class="section-title">Reminder</div>
+      <div class="tweet-head">
+        <div class="section-title" style="margin:0;">Reminder</div>
+        <div class="tweet-nav">
+          <button class="tweet-nav-btn" data-action="tweet-prev" aria-label="Sebelumnya">‹</button>
+          <span class="tweet-count mono">${tweetIndex+1}/${TWEET_URLS.length}</span>
+          <button class="tweet-nav-btn" data-action="tweet-next" aria-label="Berikutnya">›</button>
+        </div>
+      </div>
       <blockquote class="twitter-tweet" data-dnt="true">
-        <a href="https://twitter.com/itskindavienny/status/686914080364363776"></a>
+        <a href="${url}"></a>
       </blockquote>
     </div>`;
 }
@@ -1002,6 +1021,18 @@ document.getElementById('app').addEventListener('click', (e)=>{
   const catHead = e.target.closest('[data-action="toggle-cat"]');
   if(catHead){
     document.querySelector(`.category[data-cat="${catHead.dataset.cat}"]`).classList.toggle('collapsed');
+    return;
+  }
+  const tweetPrev = e.target.closest('[data-action="tweet-prev"]');
+  if(tweetPrev){
+    tweetIndex = (tweetIndex - 1 + TWEET_URLS.length) % TWEET_URLS.length;
+    renderDashboard();
+    return;
+  }
+  const tweetNext = e.target.closest('[data-action="tweet-next"]');
+  if(tweetNext){
+    tweetIndex = (tweetIndex + 1) % TWEET_URLS.length;
+    renderDashboard();
     return;
   }
   const weekHead = e.target.closest('[data-action="toggle-week"]');
