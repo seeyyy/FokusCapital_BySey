@@ -297,7 +297,7 @@
     <div class="eyebrow">Perwira Bank Indonesia · Angkatan 41</div>
     <h1>#FokusCapital Project</h1>
     <p class="subtitle">by sey</p>
-    <p class="tag">Rencana Belajar PCPM 41 · Live Class → Materi → Booster → Tryout. Dinamis, bukan kaku — centang sesuai progres aslimu, bukan jadwal jam-per-jam.</p>
+    <p class="tag">Rencana Belajar PCPM 41 · Live Class → Materi → Booster → Tryout.</p>
     <div class="header-meta" id="headerMeta"></div>
   </div>
 </header>
@@ -325,7 +325,7 @@
 "use strict";
 
 /* ================= CONFIG / DATA ================= */
-const BUILD_VERSION = '2026-07-02.3';
+const BUILD_VERSION = '2026-07-06.1';
 const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const DAYS_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
@@ -387,7 +387,9 @@ function genItems(){
   const push=(id,tahap,cat,label)=>items.push({id,tahap,cat,label,checked:false});
 
   for(let i=1;i<=10;i++) push(`t1-lc-verbal-${i}`,1,'Live Class',`Live Class Verbal #${i}`);
-  for(let i=1;i<=6;i++)  push(`t1-lc-fn-${i}`,1,'Live Class',`Live Class Figural & Numerical #${i}`);
+  for(let i=1;i<=10;i++) push(`t1-lc-num-${i}`,1,'Live Class',`Live Class Numerikal #${i}`);
+  for(let i=1;i<=10;i++) push(`t1-lc-ds-${i}`,1,'Live Class',`Live Class Digit Symbol #${i}`);
+  for(let i=1;i<=10;i++) push(`t1-lc-diag-${i}`,1,'Live Class',`Live Class Diagrammatical #${i}`);
   for(let i=1;i<=15;i++) push(`t1-bo-verbal-${i}`,1,'Booster',`Booster Verbal — Paket ${i}`);
   for(let i=1;i<=25;i++) push(`t1-bo-num-${i}`,1,'Booster',`Booster Numerikal — Paket ${i}`);
   for(let i=1;i<=15;i++) push(`t1-bo-ds-${i}`,1,'Booster',`Booster Digit Symbol — Paket ${i}`);
@@ -482,6 +484,18 @@ async function loadState(){
   }catch(e){
     // first run / no key yet — keep defaults
   }
+  // migrasi: id lama "t1-lc-fn-N" (Figural & Numerical) diganti jadi "t1-lc-diag-N" (Diagrammatical)
+  let migrated = false;
+  Object.keys(state.items).forEach(key=>{
+    const m = key.match(/^t1-lc-fn-(\d+)$/);
+    if(m){
+      const newKey = `t1-lc-diag-${m[1]}`;
+      if(state.items[key] && !state.items[newKey]) state.items[newKey] = true;
+      delete state.items[key];
+      migrated = true;
+    }
+  });
+  if(migrated) scheduleSave();
   if(storageKind==='memory'){
     showToast('Browser ini memblokir penyimpanan lokal — progres hanya tersimpan selama tab ini terbuka.');
   }
